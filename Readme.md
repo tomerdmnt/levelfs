@@ -5,12 +5,18 @@ uses sublevels ('.' denotes a directory) as file paths.
 
 ## Install
 
-- on osx, install osxfuse:
+on osx, install osxfuse
 ```
 $ brew install osxfus
 ```
 
-- build:
+init submodules
+```
+$ git submodule init
+$ git submodule update
+```
+
+build
 ```
 $ make
 ```
