@@ -16,18 +16,30 @@
 
 static void *levelfs_init(struct fuse_conn_info *);
 static int levelfs_getattr(const char *, struct stat *);
+static int levelfs_setxattr(const char *, const char *, const char *,
+                           size_t, int, uint32_t);
 static int levelfs_readdir(const char *, void *, fuse_fill_dir_t,
   	                   off_t, struct fuse_file_info *);
-static int levelfs_open(const char *, struct fuse_file_info *);
 static int levelfs_read(const char *, char *, size_t,
 	                off_t, struct fuse_file_info *);
+static int levelfs_write(const char *, const char *, size_t,
+                         off_t, struct fuse_file_info *);
+static int levelfs_open(const char *, struct fuse_file_info *);
+static int levelfs_flush(const char *, struct fuse_file_info *);
+static int levelfs_release(const char *, struct fuse_file_info *);
+static int levelfs_truncate(const char *, off_t);
 
 static struct fuse_operations levelfs_oper = {
 	.init     = levelfs_init,
 	.getattr  = levelfs_getattr,
+	.setxattr = levelfs_setxattr,
 	.readdir  = levelfs_readdir,
-	.open     = levelfs_open,
 	.read     = levelfs_read,
+	.write    = levelfs_write,
+	.open     = levelfs_open,
+	.flush    = levelfs_flush,
+	.release  = levelfs_release,
+	.truncate = levelfs_truncate,
 };
 
 typedef struct {
@@ -66,29 +78,35 @@ levelfs_getattr(const char *path, struct stat *stbuf)
 	const char *key, *val;
 	char *base_key;
 	size_t base_key_len, klen, vlen;
-	ctx_t *ctx = fuse_get_context()->private_data;
+	struct fuse_context *fuse_ctx = fuse_get_context();
+	ctx_t *ctx = fuse_ctx->private_data;
 
 	memset(stbuf, sizeof(struct stat), 0);
+	stbuf->st_uid = fuse_ctx->uid;
+	stbuf->st_gid = fuse_ctx->gid;
 
+	/* root directory */
 	if (strcmp(path, "/") == 0) {
 		stbuf->st_mode = S_IFDIR | 0755;
 		stbuf->st_nlink = 2;
 		return 0;
 	}
 
-	base_key = path_to_key(path, strlen(path), &base_key_len);
+	base_key = path_to_key(path, &base_key_len);
 	it = levelfs_iter_seek(ctx->db, base_key, base_key_len);
 
 	key = levelfs_iter_next(it, &klen);
 
 	if (!key) {
 		res = -ENOENT;
-	} else if (strncmp(base_key, key, klen) == 0) {
-		val = levelfs_iter_value(it, &vlen);
-		stbuf->st_mode = S_IFREG | 0444;
+	} else if (klen == base_key_len) {
+		/* exact match = file */
+		stbuf->st_mode = S_IFREG | 0666;
 		stbuf->st_nlink = 1;
+		val = levelfs_iter_value(it, &vlen);
 		stbuf->st_size = vlen;
 	} else {
+		/* partial match = directory */
 		stbuf->st_mode = S_IFDIR | 0755;
 		stbuf->st_nlink = 2;
 	}
@@ -99,36 +117,43 @@ levelfs_getattr(const char *path, struct stat *stbuf)
 	return res;
 }
 
+static int
+levelfs_setxattr(const char *path, const char *key, const char *val,
+                size_t bufsize, int unknown, uint32_t u) {
+	return 0;
+}
+
 static int 
 levelfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
-              off_t offset, struct fuse_file_info *fi)
+                off_t offset, struct fuse_file_info *fi)
 {
 	levelfs_iter_t *it;
 	const char *key;
-	char *base_key, *item_path, *item, *prev_item, *p;
+	char *base_key, *item_path, *item, *prev_item, *pdiff;
 	size_t base_key_len, klen;
 	ctx_t *ctx = fuse_get_context()->private_data;
 
 	filler(buf, ".", NULL, 0);
 	filler(buf, "..", NULL, 0);
 
-	base_key = path_to_key(path, strlen(path), &base_key_len);
+	base_key = path_to_key(path, &base_key_len);
+	item_path = malloc(1);
 	prev_item = malloc(1);
 	prev_item[0] = '\0';
 
 	it = levelfs_iter_seek(ctx->db, base_key, base_key_len);
+
 	while ((key = levelfs_iter_next(it, &klen)) != NULL) {
+		free(item_path);
 		item_path = key_to_path(key, klen);
-		if (strlen(item_path) < strlen(path))
-			break;
-		//TODO: new path function
-		p = item_path + strlen(path);
-		if (*p == '/') p++;
-		item = strsep(&p, "/");
+		pdiff = (char *)path_diff(path, item_path);
+		if (!pdiff) continue;
+		item = strsep(&pdiff, "/");
 
 		if (strcmp(prev_item, item) == 0)
 			continue;
 
+		/* add item to directory */
 		filler(buf, item, NULL, 0);
 
 		free(prev_item);
@@ -136,19 +161,100 @@ levelfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		strcpy(prev_item, item);
 	}
 
-	free(base_key);
 	levelfs_iter_close(it);
+	free(base_key);
+	free(item_path);
 	free(prev_item);
 
 	return 0;
 }
 
 static int
+levelfs_write(const char *path, const char *buf, size_t bufsize,
+              off_t offset, struct fuse_file_info *fi) {
+	int res;
+	char *key, *new_val;
+	const char *val;
+	size_t klen, vlen, new_val_len;
+	char *err = NULL;
+	ctx_t *ctx = fuse_get_context()->private_data;
+
+	res = bufsize;
+	new_val = NULL;
+
+	key = path_to_key(path, &klen);
+	val = levelfs_db_get(ctx->db, key, klen, &vlen, &err);
+	if (err) {
+		res = -ENOENT;
+		goto clean;
+	}
+	if (offset + bufsize > vlen) {
+		/* allocate a bigger buffer */
+		new_val_len = offset + bufsize;
+		new_val = malloc(new_val_len);
+		memcpy(new_val, val, offset);
+	} else {
+		new_val_len = vlen;
+		new_val = malloc(new_val_len);
+		memcpy(new_val, val, new_val_len);
+	}
+	memcpy(new_val, buf, bufsize);
+	levelfs_db_put(ctx->db, key, klen, new_val, new_val_len, &err);
+	if (err) {
+		fprintf(stderr, "leveldb put error: %s\n", err);
+		// TODO: change errno
+		res = -ENOENT;
+	}
+
+clean:
+	free(key);
+	if (new_val) free(new_val);
+	if (err) leveldb_free(err);
+
+	return res;
+}
+
+static int
 levelfs_open(const char *path, struct fuse_file_info *fi)
 {
-	if ((fi->flags & 3) != O_RDONLY)
-		return -EACCES;
+	return 0;
+}
 
+static int
+levelfs_flush(const char *path, struct fuse_file_info *fi) {
+	return 0;
+}
+
+static int
+levelfs_release(const char *path, struct fuse_file_info *fi) {
+	return 0;
+}
+
+static int
+levelfs_truncate(const char *path, off_t size) {
+	const char *val;
+	char *key;
+	size_t vlen, klen;
+	char *err = NULL;
+	ctx_t *ctx = fuse_get_context()->private_data;
+
+	key = path_to_key(path, &klen);
+	val = levelfs_db_get(ctx->db, key, klen, &vlen, &err);
+	if (err) {
+		free(key);
+		free(err);
+		return -ENOENT;
+	}
+	if (vlen > size) {
+		levelfs_db_put(ctx->db, key, klen, val, size, &err);
+		if (err) {
+			fprintf(stderr, "leveldb put: %s\n", err);
+			free(err);
+			free(key);
+			// TODO: change errno
+			return -ENOENT;
+		}
+	}
 	return 0;
 }
 
@@ -162,7 +268,7 @@ levelfs_read(const char *path, char *buf, size_t size, off_t offset,
 	char *err = NULL;
 	ctx_t *ctx = fuse_get_context()->private_data;
 
-	key = path_to_key(path, strlen(path), &keylen);
+	key = path_to_key(path, &keylen);
 	val = levelfs_db_get(ctx->db, key, keylen, &vallen, &err);
 	free(key);
 
@@ -174,8 +280,7 @@ levelfs_read(const char *path, char *buf, size_t size, off_t offset,
 
 	if (vallen - offset < size) 
 		size = vallen - offset;
-	memcpy(buf, val + offset, size);
-
+	memcpy(buf, val+offset, size);
 
 	return size;
 }

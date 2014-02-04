@@ -9,7 +9,6 @@ LDLIBS+=-L./deps/leveldb/ -lleveldb
 SRC=$(wildcard src/*.c)
 OBJ=$(SRC:.c=.o)
 
-
 $(P): $(OBJ)
 	$(CC) $^ $(CFLAGS) $(LDLIBS) -o $@
 

@@ -34,6 +34,13 @@ levelfs_db_get(levelfs_db_t *db, const char *key, size_t klen,
                size_t *vlen, char **errptr);
 
 /*
+ * db put
+ */
+void
+levelfs_db_put(levelfs_db_t *db, const char *key, size_t klen,
+               const char *val, size_t vlen, char **errptr);
+
+/*
  * create iterator for keys which begines with key
  */
 levelfs_iter_t *

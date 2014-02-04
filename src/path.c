@@ -3,8 +3,6 @@
 #include <stdlib.h>
 
 #include "path.h"
-#include "config.h"
-
 
 const char *delim = ".";
 
@@ -12,9 +10,11 @@ const char *delim = ".";
  * /foo/bar -> foo.bar
  */
 char *
-path_to_key(const char *path, size_t plen, size_t *klen) {
+path_to_key(const char *path, size_t *klen) {
 	char *key;
+	size_t plen;
 
+	plen = strlen(path);
 	*klen = plen;
 	if (path[plen-1] == '/')
 		if (*klen > 0) (*klen)--;
@@ -52,6 +52,22 @@ key_to_path(const char *key, size_t klen) {
 	}
 
 	path[klen+1] = '\0';
+	return path;
+}
+
+const char *
+path_diff(const char *base_path, const char *path) {
+	size_t base_path_len, path_len;
+
+	base_path_len = strlen(base_path);
+	path_len = strlen(path);
+
+	if (base_path_len > path_len)
+		return NULL;
+	if (strncmp(base_path, path, base_path_len) != 0)
+		return NULL;
+	path += base_path_len;
+	if (*path == '/') path++;
 	return path;
 }
 

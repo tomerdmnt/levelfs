@@ -5,7 +5,7 @@
  * returns a db key representaiton of a path
  */
 char *
-path_to_key(const char *path, size_t plen, size_t *klen);
+path_to_key(const char *path, size_t *klen);
 
 
 /*
@@ -13,3 +13,9 @@ path_to_key(const char *path, size_t plen, size_t *klen);
  */
 char *
 key_to_path(const char *key, size_t klen);
+
+/*
+ * returns diff between paths
+ */
+const char *
+path_diff(const char *base_path, const char *path);

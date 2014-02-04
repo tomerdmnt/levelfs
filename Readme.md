@@ -16,3 +16,12 @@ FUSE options:
     -f                     foreground operation
     -s                     disable multi-threaded operation
 ```
+
+## TODO
+
+- support table delimeters other than '.'
+- support arbitrary binary in keys
+- write
+- unlink
+- mkdir
+- create

@@ -43,6 +43,16 @@ levelfs_db_get(levelfs_db_t *db, const char *key, size_t klen,
 	return val;
 }
 
+void
+levelfs_db_put(levelfs_db_t *db, const char *key, size_t klen,
+               const char *val, size_t vlen, char **errptr) {
+	leveldb_writeoptions_t *opts;
+
+	opts = leveldb_writeoptions_create();
+	leveldb_put(db->db, opts, key, klen, val, vlen, errptr);
+	leveldb_writeoptions_destroy(opts);
+}
+
 levelfs_iter_t *
 levelfs_iter_seek(levelfs_db_t *db, const char *key, size_t klen) {
 	levelfs_iter_t *it;
