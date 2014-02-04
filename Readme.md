@@ -1,6 +1,20 @@
 
 Leveldb FUSE file system
 
+uses sublevels ('.' denotes a directory) as file paths.
+
+## Install
+
+- on osx, install osxfuse:
+```
+$ brew install osxfus
+```
+
+- build:
+```
+$ make
+```
+
 ## Usage
 
 ```
@@ -19,9 +33,8 @@ FUSE options:
 
 ## TODO
 
-- support table delimeters other than '.'
+- support table seperators other than '.'
 - support arbitrary binary in keys
-- write
+- create
 - unlink
 - mkdir
-- create
