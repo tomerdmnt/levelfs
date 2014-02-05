@@ -112,10 +112,12 @@ levelfs_getattr(const char *path, struct stat *stbuf)
 		stbuf->st_nlink = 1;
 		val = levelfs_iter_value(it, &vlen);
 		stbuf->st_size = vlen;
-	} else {
+	} else if (path[strlen(path)-1] == '/') {
 		/* partial match = directory */
 		stbuf->st_mode = S_IFDIR | 0755;
 		stbuf->st_nlink = 2;
+	} else {
+		res = -ENOENT;
 	}
 
 	free(base_key);
