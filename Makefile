@@ -4,15 +4,15 @@ CC=clang
 CFLAGS=-Wall -O0 -g
 CFLAGS+=-D_FILE_OFFSET_BITS=64
 LDLIBS=`pkg-config fuse --cflags --libs`
-LDLIBS+=-L./deps/leveldb/ -lleveldb
+LDLIBS+=-lstdc++
 
 SRC=$(wildcard src/*.c)
 OBJ=$(SRC:.c=.o)
 
-LIBLEVELDB=deps/leveldb/libleveldb.dylib
+LIBLEVELDB=deps/leveldb/libleveldb.a
 
 $(P): $(OBJ) $(LIBLEVELDB)
-	$(CC) $^ $(CFLAGS) $(LDLIBS) -o $@
+	$(CC) $^ $(CFLAGS) $(LDLIBS) $(LIBLEVELDB) -o $@
 
 %.o: %.c
 	$(CC) -c $(CFLAGS) $< -o $@
@@ -23,7 +23,7 @@ $(LIBLEVELDB):
 test:
 	$(CC) -DNO_MAIN $(CFLAGS) -Wno-unused-function -Wno-unused-variable $(LDLIBS) $(SRC) test/test.c -o test/test
 	time test/test
-#	rm test/test
+	rm test/test
 
 tags: $(SRC)
 	ctags -R *
