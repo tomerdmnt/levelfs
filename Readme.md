@@ -1,7 +1,7 @@
 
 Leveldb FUSE file system
 
-uses sublevels ('.' denotes a directory) as file paths.
+uses sublevels (0xff denotes a directory) as file paths.
 
 ## Install
 
@@ -39,8 +39,9 @@ FUSE options:
 
 ## TODO
 
-- support table seperators other than '.'
+- support sublevel seperators other than 0xff
 - support arbitrary binary in keys
 - create
 - unlink
 - mkdir
+
