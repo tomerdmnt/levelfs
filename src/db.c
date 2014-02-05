@@ -83,14 +83,16 @@ levelfs_iter_next(levelfs_iter_t *it, size_t *klen) {
 	*klen = 0;
 
 	if (it->first) {
-		next_key = leveldb_iter_key(it->it, klen);
+		if (!leveldb_iter_valid(it->it))
+			return NULL;
 		it->first = 0;
 	} else {
 		leveldb_iter_next(it->it);
-		if (leveldb_iter_valid(it->it))
-			next_key = leveldb_iter_key(it->it, klen);
+		if (!leveldb_iter_valid(it->it))
+			return NULL;
 	}
 
+	next_key = leveldb_iter_key(it->it, klen);
 	if (it->base_key_len > *klen) {
 		klen = 0;
 		return NULL;
