@@ -19,3 +19,10 @@ key_to_path(const char *key, size_t klen);
  */
 const char *
 path_diff(const char *base_path, const char *path);
+
+/*
+ * returns true if base_key is a sublevel of key
+ */
+const char
+key_is_base(const char *base_key, size_t base_key_len,
+            const char *key, size_t klen);

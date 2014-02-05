@@ -71,3 +71,15 @@ path_diff(const char *base_path, const char *path) {
 	return path;
 }
 
+const char
+key_is_base(const char *base_key, size_t base_key_len,
+            const char *key, size_t klen) {
+	if (base_key_len >= klen)
+		return 0;
+	if (strncmp(base_key, key, base_key_len) == 0 &&
+	    key[base_key_len] == sep) {
+		return 1;
+	}
+	return 0;
+}
+
