@@ -41,7 +41,6 @@ FUSE options:
 
 - support sublevel seperators other than 0xff
 - support arbitrary binary in keys
-- create
 - unlink
 - mkdir
 
