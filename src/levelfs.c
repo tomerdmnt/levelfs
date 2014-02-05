@@ -15,6 +15,7 @@
 #include "db.h"
 
 static void *levelfs_init(struct fuse_conn_info *);
+static void levelfs_destroy(void *);
 static int levelfs_getattr(const char *, struct stat *);
 static int levelfs_setxattr(const char *, const char *, const char *,
                            size_t, int, uint32_t);
@@ -31,6 +32,7 @@ static int levelfs_truncate(const char *, off_t);
 
 static struct fuse_operations levelfs_oper = {
 	.init     = levelfs_init,
+	.destroy  = levelfs_destroy,
 	.getattr  = levelfs_getattr,
 	.setxattr = levelfs_setxattr,
 	.readdir  = levelfs_readdir,
@@ -68,6 +70,11 @@ levelfs_init(struct fuse_conn_info *conn) {
 	}
 
 	return ctx;
+}
+
+static void
+levelfs_destroy(void *ctx) {
+	levelfs_db_close(((ctx_t *)ctx)->db);
 }
 
 static int
@@ -198,7 +205,7 @@ levelfs_write(const char *path, const char *buf, size_t bufsize,
 		new_val = malloc(new_val_len);
 		memcpy(new_val, val, new_val_len);
 	}
-	memcpy(new_val, buf, bufsize);
+	memcpy(new_val+offset, buf, bufsize);
 	levelfs_db_put(ctx->db, key, klen, new_val, new_val_len, &err);
 	if (err) {
 		fprintf(stderr, "leveldb put error: %s\n", err);

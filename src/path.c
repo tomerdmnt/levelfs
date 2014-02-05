@@ -4,7 +4,7 @@
 
 #include "path.h"
 
-const char *delim = ".";
+static const char sep = 0xff;
 
 /*
  * /foo/bar -> foo.bar
@@ -26,7 +26,7 @@ path_to_key(const char *path, size_t *klen) {
 
 	for (int i = 0; i < *klen; ++i) {
 		if (path[i] == '/')
-			strncpy(key+i, delim, 1);
+			key[i] = sep;
 		else
 			key[i] = path[i];
 	}
@@ -45,7 +45,7 @@ key_to_path(const char *key, size_t klen) {
 	path[0] = '/';
 
 	for (int i = 0; i < klen; ++i) {
-		if (strncmp(key+i, delim, 1) == 0)
+		if (key[i] == sep)
 			path[i+1] = '/';
 		else
 			path[i+1] = key[i];

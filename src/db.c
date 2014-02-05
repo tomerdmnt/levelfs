@@ -49,6 +49,8 @@ levelfs_db_put(levelfs_db_t *db, const char *key, size_t klen,
 	leveldb_writeoptions_t *opts;
 
 	opts = leveldb_writeoptions_create();
+	/* sync=true flushed buffer */
+	leveldb_writeoptions_set_sync(opts, 1);
 	leveldb_put(db->db, opts, key, klen, val, vlen, errptr);
 	leveldb_writeoptions_destroy(opts);
 }
@@ -66,6 +68,8 @@ levelfs_iter_seek(levelfs_db_t *db, const char *key, size_t klen) {
 	memcpy(it->base_key, key, klen);
 
 	opts = leveldb_readoptions_create();
+	/* don't fill cache in iterations */
+	leveldb_readoptions_set_fill_cache(opts, 0);
 	it->it = leveldb_create_iterator(db->db, opts);
 	leveldb_iter_seek(it->it, it->base_key, it->base_key_len);
 	it->first = 1;

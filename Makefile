@@ -23,7 +23,7 @@ $(LIBLEVELDB):
 test:
 	$(CC) -DNO_MAIN $(CFLAGS) -Wno-unused-function -Wno-unused-variable $(LDLIBS) $(SRC) test/test.c -o test/test
 	time test/test
-	rm test/test
+#	rm test/test
 
 tags: $(SRC)
 	ctags -R *
