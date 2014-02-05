@@ -353,13 +353,23 @@ static struct fuse_opt opts[] = {
 	FUSE_OPT_END
 };
 
+static char *unrealpath(const char *name) {
+	if (mkdir(name, 0777) != 0) {
+		if (errno != EEXIST) {
+			perror("error creating directory");
+			return NULL;
+		}
+	}
+	return realpath(name, NULL);
+}
+
 static int
 opt_parse(void *data, const char *arg, int key, struct fuse_args *outargs)
 {
 	switch(key) {
 		case FUSE_OPT_KEY_NONOPT:
 			if (!conf.db_path) {
-				conf.db_path = realpath(arg, NULL);
+				conf.db_path = unrealpath(arg);
 				if (!conf.db_path) perror(arg);
 				return 0;
 			}
