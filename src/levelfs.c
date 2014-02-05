@@ -24,6 +24,7 @@ static int levelfs_read(const char *, char *, size_t,
 static int levelfs_write(const char *, const char *, size_t,
                          off_t, struct fuse_file_info *);
 static int levelfs_mknod(const char *, mode_t, dev_t);
+static int levelfs_unlink(const char *);
 static int levelfs_truncate(const char *, off_t);
 static int levelfs_open(const char *, struct fuse_file_info *);
 static int levelfs_flush(const char *, struct fuse_file_info *);
@@ -40,6 +41,7 @@ static struct fuse_operations levelfs_oper = {
 	.read     = levelfs_read,
 	.write    = levelfs_write,
 	.mknod    = levelfs_mknod,
+	.unlink   = levelfs_unlink,
 	.truncate = levelfs_truncate,
 	.open     = levelfs_open,
 	.flush    = levelfs_flush,
@@ -108,6 +110,7 @@ levelfs_getattr(const char *path, struct stat *stbuf)
 	it = levelfs_iter_seek(ctx->db, base_key, base_key_len);
 	key = levelfs_iter_next(it, &klen);
 	if (!key) {
+		printf("noent key null\n");
 		res = -ENOENT;
 	} else if (klen == base_key_len) {
 		/* exact match = file */
@@ -115,7 +118,7 @@ levelfs_getattr(const char *path, struct stat *stbuf)
 		stbuf->st_nlink = 1;
 		val = levelfs_iter_value(it, &vlen);
 		stbuf->st_size = vlen;
-	} else if (path[strlen(path)-1] == '/') {
+	} else if (key_is_base(base_key, base_key_len, key, klen)) {
 		/* partial match = directory */
 		stbuf->st_mode = S_IFDIR | 0755;
 		stbuf->st_nlink = 2;
@@ -194,6 +197,8 @@ levelfs_read(const char *path, char *buf, size_t size, off_t offset,
 		return 0;
 	}
 
+	if (vallen < offset)
+		return 0;
 	if (vallen - offset < size) 
 		size = vallen - offset;
 	memcpy(buf, val+offset, size);
@@ -262,6 +267,22 @@ levelfs_mknod(const char *path, mode_t mode, dev_t dev) {
 		return -ENOENT;
 	}
 
+	return 0;
+}
+
+static int
+levelfs_unlink(const char *path) {
+	char *key;
+	size_t klen;
+	char *err = NULL;
+	ctx_t *ctx = fuse_get_context()->private_data;
+
+	key = path_to_key(path, &klen);
+	levelfs_db_del(ctx->db, key, klen, &err);
+	if (err) {
+		fprintf(stderr, "leveldb del error: %s", err);
+		return -ENOENT;
+	}
 	return 0;
 }
 

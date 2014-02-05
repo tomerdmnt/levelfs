@@ -41,10 +41,18 @@ levelfs_db_put(levelfs_db_t *db, const char *key, size_t klen,
                const char *val, size_t vlen, char **errptr);
 
 /*
+ * db delete
+ */
+void
+levelfs_db_del(levelfs_db_t *db, const char *key,
+               size_t klen, char **errptr);
+
+/*
  * create iterator for keys which begines with key
  */
 levelfs_iter_t *
-levelfs_iter_seek(levelfs_db_t *db, const char *base_key, size_t base_key_len);
+levelfs_iter_seek(levelfs_db_t *db, const char *base_key,
+                  size_t base_key_len);
 
 /*
  * advances the iterator and returns the key

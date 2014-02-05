@@ -43,4 +43,4 @@ FUSE options:
 - support arbitrary binary in keys
 - unlink
 - mkdir
-
+- rmdir
