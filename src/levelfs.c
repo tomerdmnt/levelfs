@@ -3,6 +3,8 @@
  */
 #define FUSE_USE_VERSION 26
 
+#define LEVELFS_VERSION "0.0.1"
+
 #include <fuse.h>
 #include <stdio.h>
 #include <string.h>
@@ -475,7 +477,7 @@ opt_parse(void *data, const char *arg, int key, struct fuse_args *outargs)
 			usage(outargs->argv[0]);
 			exit(1);
 		case KEY_VERSION:
-			fprintf(stderr, "v0.1\n");
+			fprintf(stderr, "v%s\n", LEVELFS_VERSION);
 			exit(0);
 	}
 	return 1;
