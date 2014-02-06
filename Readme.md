@@ -1,9 +1,10 @@
 
 Leveldb FUSE file system
 
-uses sublevels (0xff denotes a directory) as file paths.
+Uses sublevels (0xff denotes a directory) as file paths.
 
-this project still requires testing.
+All basic operations are implemented (mknod, mkdir, rmdir, read write, etc...), 
+however this project still requires testing.
 
 ## Install
 
@@ -44,4 +45,5 @@ FUSE options:
 - support sublevel seperators other than 0xff
 - support arbitrary binary in keys
 - refactor some of the operations
+- docs
 
