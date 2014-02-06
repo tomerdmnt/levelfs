@@ -32,6 +32,8 @@ static int levelfs_release(const char *, struct fuse_file_info *);
 static int levelfs_chmod(const char *, mode_t);
 static int levelfs_chown(const char *, uid_t, gid_t);
 static int levelfs_utime(const char *, struct utimbuf *);
+static int levelfs_mkdir(const char *, mode_t);
+static int levelfs_rmdir(const char *);
 
 static struct fuse_operations levelfs_oper = {
 	.init     = levelfs_init,
@@ -49,6 +51,8 @@ static struct fuse_operations levelfs_oper = {
 	.chmod    = levelfs_chmod,
 	.chown    = levelfs_chown,
 	.utime    = levelfs_utime,
+	.mkdir    = levelfs_mkdir,
+	.rmdir    = levelfs_rmdir,
 };
 
 typedef struct {
@@ -87,7 +91,7 @@ levelfs_destroy(void *ctx) {
 static int
 levelfs_getattr(const char *path, struct stat *stbuf)
 {
-	int res = 0;
+	int res;
 	levelfs_iter_t *it;
 	const char *key, *val;
 	char *base_key;
@@ -106,24 +110,27 @@ levelfs_getattr(const char *path, struct stat *stbuf)
 		return 0;
 	}
 
+	res = -ENOENT;
 	base_key = path_to_key(path, &base_key_len);
 	it = levelfs_iter_seek(ctx->db, base_key, base_key_len);
-	key = levelfs_iter_next(it, &klen);
-	if (!key) {
-		printf("noent key null\n");
-		res = -ENOENT;
-	} else if (klen == base_key_len) {
-		/* exact match = file */
-		stbuf->st_mode = S_IFREG | 0666;
-		stbuf->st_nlink = 1;
-		val = levelfs_iter_value(it, &vlen);
-		stbuf->st_size = vlen;
-	} else if (key_is_base(base_key, base_key_len, key, klen)) {
-		/* partial match = directory */
-		stbuf->st_mode = S_IFDIR | 0755;
-		stbuf->st_nlink = 2;
-	} else {
-		res = -ENOENT;
+
+	while ((key = levelfs_iter_next(it, &klen)) != NULL) {
+		if (keycmp(base_key, base_key_len, key, klen) == 0) {
+			/* exact match = file */
+			stbuf->st_mode = S_IFREG | 0666;
+			stbuf->st_nlink = 1;
+			val = levelfs_iter_value(it, &vlen);
+			stbuf->st_size = vlen;
+			res = 0;
+			break;
+		} else if (key_is_base(base_key, base_key_len, key, klen)) {
+			// TODO: find better names (sublevel?)
+			/* key base = directory */
+			stbuf->st_mode = S_IFDIR | 0755;
+			stbuf->st_nlink = 2;
+			res = 0;
+			break;
+		}
 	}
 
 	free(base_key);
@@ -263,6 +270,7 @@ levelfs_mknod(const char *path, mode_t mode, dev_t dev) {
 	free(key);
 	if (err) {
 		fprintf(stderr, "leveldb put error: %s\n", err);
+		free(err);
 		// TODO: change errno
 		return -ENOENT;
 	}
@@ -341,6 +349,74 @@ levelfs_chown(const char *path, uid_t uid, gid_t gid) {
 
 static int
 levelfs_utime(const char *path, struct utimbuf *ubuf) {
+	return 0;
+}
+
+static int
+levelfs_mkdir(const char *path, mode_t mode) {
+	char *base_key;
+	const char *key;
+	size_t base_key_len, klen;
+	levelfs_iter_t *it;
+	char *err = NULL;
+	ctx_t *ctx = fuse_get_context()->private_data;
+
+	base_key = path_to_key(path, &base_key_len);
+	it = levelfs_iter_seek(ctx->db, base_key, base_key_len);
+	if ((key = levelfs_iter_next(it, &klen)) != NULL) {
+		if (keycmp(base_key, base_key_len, key, klen) == 0 ||
+		    key_is_base(base_key, base_key_len, key, klen)) {
+			free(base_key);
+			return -EEXIST;
+		}
+	}
+
+	base_key = key_append_sep(base_key, &base_key_len);
+	levelfs_db_put(ctx->db, base_key, base_key_len, NULL, 0, &err);
+	if (err) {
+		fprintf(stderr, "leveldb put error: %s\n", err);
+		free(err);
+		free(base_key);
+		return -ENOENT;
+	}
+	free(base_key);
+
+	return 0;
+}
+
+static int
+levelfs_rmdir(const char *path) {
+	char *base_key;
+	const char *key;
+	size_t base_key_len, klen;
+	levelfs_iter_t *it;
+	char *err = NULL;
+	char delete = 0;
+	ctx_t *ctx = fuse_get_context()->private_data;
+
+	base_key = path_to_key(path, &base_key_len);
+	base_key = key_append_sep(base_key, &base_key_len);
+	it = levelfs_iter_seek(ctx->db, base_key, base_key_len);
+
+	while ((key = levelfs_iter_next(it, &klen)) != NULL) {
+		if (keycmp(key, klen, base_key, base_key_len) == 0) {
+			delete = 1;
+		} else {
+			free(base_key);
+			return -ENOTEMPTY;
+		}
+	}
+	if (delete) {
+		levelfs_db_del(ctx->db, base_key, base_key_len, &err);
+		if (err) {
+			fprintf(stderr, "leveldb del error: %s\n", err);
+			free(base_key);
+			free(err);
+			return -ENOENT;
+		}
+	}
+
+	free(base_key);
 	return 0;
 }
 

@@ -1,6 +1,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "path.h"
 
@@ -83,3 +84,18 @@ key_is_base(const char *base_key, size_t base_key_len,
 	return 0;
 }
 
+char *
+key_append_sep(char *key, size_t *klen) {
+	(*klen)++;
+	key = realloc(key, *klen);
+	key[*klen-1] = sep;
+	return key;
+}
+
+int
+keycmp(const char *key1, size_t klen1,
+       const char *key2, size_t klen2) {
+	if (klen1 != klen2)
+		return -1;
+	return strncmp(key1, key2, klen1);
+}

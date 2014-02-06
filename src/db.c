@@ -104,11 +104,13 @@ levelfs_iter_next(levelfs_iter_t *it, size_t *klen) {
 	}
 
 	next_key = leveldb_iter_key(it->it, klen);
-	if (it->base_key_len < *klen) {
-		if (strncmp(it->base_key, next_key, it->base_key_len) != 0) {
-			klen = 0;
-			return NULL;
-		}
+	if (it->base_key_len > *klen) {
+		klen = 0;
+		return NULL;
+	}
+	if (strncmp(it->base_key, next_key, it->base_key_len) != 0) {
+		klen = 0;
+		return NULL;
 	}
 
 	return next_key;

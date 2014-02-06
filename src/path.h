@@ -26,3 +26,16 @@ path_diff(const char *base_path, const char *path);
 const char
 key_is_base(const char *base_key, size_t base_key_len,
             const char *key, size_t klen);
+
+/*
+ * append the seperator to a given key
+ */
+char *
+key_append_sep(char *key, size_t *klen);
+
+/*
+ * compare tow keys
+ */
+int
+keycmp(const char *key1, size_t klen1,
+       const char *key2, size_t klen2);

@@ -3,6 +3,8 @@ Leveldb FUSE file system
 
 uses sublevels (0xff denotes a directory) as file paths.
 
+this project still requires testing.
+
 ## Install
 
 on osx, install osxfuse
@@ -41,5 +43,5 @@ FUSE options:
 
 - support sublevel seperators other than 0xff
 - support arbitrary binary in keys
-- mkdir
-- rmdir
+- refactor some of the operations
+
