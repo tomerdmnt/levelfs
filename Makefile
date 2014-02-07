@@ -28,6 +28,9 @@ test:
 tags: $(SRC)
 	ctags -R *
 
+install:
+	cp ./levelfs /usr/local/bin
+
 clean:
 	rm $(P) $(OBJ)
 
