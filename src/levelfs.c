@@ -15,6 +15,7 @@
 
 #include "path.h"
 #include "db.h"
+#include "newdirs.h"
 
 static void *levelfs_init(struct fuse_conn_info *);
 static void levelfs_destroy(void *);
@@ -111,6 +112,14 @@ levelfs_getattr(const char *path, struct stat *stbuf)
 		stbuf->st_nlink = 2;
 		return 0;
 	}
+	/* empty dir */
+	printf("getattr: newdirs_exists(%s)\n", path);
+	if (newdirs_exists(path)) {
+		stbuf->st_mode = S_IFDIR | 0755;
+		stbuf->st_nlink = 2;
+		return 0;
+	}
+	printf("getattr: %s does not exist\n", path);
 
 	res = -ENOENT;
 	base_key = path_to_key(path, &base_key_len);
@@ -150,9 +159,18 @@ levelfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	char *base_key, *item_path, *item, *prev_item, *pdiff;
 	size_t base_key_len, klen;
 	ctx_t *ctx = fuse_get_context()->private_data;
+	parent_t *p;
+	entry_t *e;
 
 	filler(buf, ".", NULL, 0);
 	filler(buf, "..", NULL, 0);
+
+	/* new directories */
+	e = NULL;
+	p = newdirs_list(path);
+	if (p) e = p->children;
+	for (; e != NULL; e = e->next)
+		filler(buf, e->name, NULL, 0);
 
 	base_key = path_to_key(path, &base_key_len);
 	item_path = malloc(1);
@@ -360,27 +378,28 @@ levelfs_mkdir(const char *path, mode_t mode) {
 	const char *key;
 	size_t base_key_len, klen;
 	levelfs_iter_t *it;
-	char *err = NULL;
 	ctx_t *ctx = fuse_get_context()->private_data;
 
 	base_key = path_to_key(path, &base_key_len);
+	printf("mkdir: %s\n", path);
+	if (newdirs_exists(path)) {
+		printf("mkdir: %s exists\n", path);
+		free(base_key);
+		return -EEXIST;
+	}
+	printf("mkdir: %s does not exists\n", path);
 	it = levelfs_iter_seek(ctx->db, base_key, base_key_len);
 	if ((key = levelfs_iter_next(it, &klen)) != NULL) {
 		if (keycmp(base_key, base_key_len, key, klen) == 0 ||
 		    key_is_base(base_key, base_key_len, key, klen)) {
+			printf("mkdir: %s found in leveldb\n", path);
 			free(base_key);
 			return -EEXIST;
 		}
 	}
 
-	base_key = key_append_sep(base_key, &base_key_len);
-	levelfs_db_put(ctx->db, base_key, base_key_len, NULL, 0, &err);
-	if (err) {
-		fprintf(stderr, "leveldb put error: %s\n", err);
-		free(err);
-		free(base_key);
-		return -ENOENT;
-	}
+	printf("mkdir: newdirs_add %s\n", path);
+	newdirs_add(path);
 	free(base_key);
 
 	return 0;
@@ -392,8 +411,6 @@ levelfs_rmdir(const char *path) {
 	const char *key;
 	size_t base_key_len, klen;
 	levelfs_iter_t *it;
-	char *err = NULL;
-	char delete = 0;
 	ctx_t *ctx = fuse_get_context()->private_data;
 
 	base_key = path_to_key(path, &base_key_len);
@@ -402,22 +419,18 @@ levelfs_rmdir(const char *path) {
 
 	while ((key = levelfs_iter_next(it, &klen)) != NULL) {
 		if (keycmp(key, klen, base_key, base_key_len) == 0) {
-			delete = 1;
-		} else {
 			free(base_key);
 			return -ENOTEMPTY;
 		}
 	}
-	if (delete) {
-		levelfs_db_del(ctx->db, base_key, base_key_len, &err);
-		if (err) {
-			fprintf(stderr, "leveldb del error: %s\n", err);
-			free(base_key);
-			free(err);
-			return -ENOENT;
-		}
+	if (newdirs_list(path) != NULL) {
+		free(base_key);
+		return -ENOTEMPTY;
 	}
+	if (!newdirs_exists(path))
+		return -ENOENT;
 
+	newdirs_remove(path);
 	free(base_key);
 	return 0;
 }
