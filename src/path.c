@@ -5,7 +5,12 @@
 
 #include "path.h"
 
-static const char sep = 0xff;
+static unsigned const char sep = 0xff;
+
+char
+sublevel_seperator() {
+	return sep;
+}
 
 /*
  * /foo/bar -> foo.bar
@@ -72,18 +77,6 @@ path_diff(const char *base_path, const char *path) {
 	return path;
 }
 
-const char
-key_is_base(const char *base_key, size_t base_key_len,
-            const char *key, size_t klen) {
-	if (base_key_len >= klen)
-		return 0;
-	if (strncmp(base_key, key, base_key_len) == 0 &&
-	    key[base_key_len] == sep) {
-		return 1;
-	}
-	return 0;
-}
-
 char *
 key_append_sep(char *key, size_t *klen) {
 	(*klen)++;
@@ -92,10 +85,36 @@ key_append_sep(char *key, size_t *klen) {
 	return key;
 }
 
-int
-keycmp(const char *key1, size_t klen1,
-       const char *key2, size_t klen2) {
-	if (klen1 != klen2)
-		return -1;
-	return strncmp(key1, key2, klen1);
+char *
+dirname(const char *path) {
+	char *dirname, *p;
+	size_t len;
+	
+	p = strrchr(path, '/');
+	if (!p) {
+		len = 1;
+		path = ".";
+	} else if (p == path) {
+		len = 1;
+		path = "/";
+	} else {
+		len = p - path;
+	}
+	dirname = malloc(len+1);
+	strncpy(dirname, path, len);
+	dirname[len] = '\0';
+	return dirname;
 }
+
+char *
+basename(const char *path) {
+	const char *p;
+
+	p = strrchr(path, '/');
+	if (!p)
+		p = path;
+	else
+		p++;
+	return strdup(p);
+}
+

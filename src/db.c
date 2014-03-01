@@ -4,9 +4,9 @@
 
 #include "db.h"
 
-levelfs_db_t *
-levelfs_db_open(const char *path, char **errptr) {
-	levelfs_db_t *out;
+db_t *
+db_open(const char *path, char **errptr) {
+	db_t *out;
 	leveldb_options_t *opts;
 	leveldb_t *db;
 
@@ -18,21 +18,21 @@ levelfs_db_open(const char *path, char **errptr) {
 		return NULL;
 	}
 
-	out = malloc(sizeof(levelfs_db_t));
-	*out = (levelfs_db_t){ .db=db, .opts=opts };
+	out = malloc(sizeof(db_t));
+	*out = (db_t){ .db=db, .opts=opts };
 	return out;
 }
 
 void
-levelfs_db_close(levelfs_db_t *db) {
+db_close(db_t *db) {
 	leveldb_options_destroy(db->opts);
 	leveldb_close(db->db);
 	free(db);
 }
 
 const char *
-levelfs_db_get(levelfs_db_t *db, const char *key, size_t klen,
-               size_t *vlen, char **errptr) {
+db_get(db_t *db, const char *key, size_t klen,
+       size_t *vlen, char **errptr) {
 	const char *val;
 	leveldb_readoptions_t *opts;
 
@@ -44,8 +44,8 @@ levelfs_db_get(levelfs_db_t *db, const char *key, size_t klen,
 }
 
 void
-levelfs_db_put(levelfs_db_t *db, const char *key, size_t klen,
-               const char *val, size_t vlen, char **errptr) {
+db_put(db_t *db, const char *key, size_t klen,
+       const char *val, size_t vlen, char **errptr) {
 	leveldb_writeoptions_t *opts;
 
 	opts = leveldb_writeoptions_create();
@@ -56,8 +56,8 @@ levelfs_db_put(levelfs_db_t *db, const char *key, size_t klen,
 }
 
 void
-levelfs_db_del(levelfs_db_t *db, const char *key,
-               size_t klen, char **errptr) {
+db_del(db_t *db, const char *key,
+       size_t klen, char **errptr) {
 	leveldb_writeoptions_t *opts;
 
 	opts = leveldb_writeoptions_create();
@@ -66,13 +66,13 @@ levelfs_db_del(levelfs_db_t *db, const char *key,
 	leveldb_delete(db->db, opts, key, klen, errptr);
 }
 
-levelfs_iter_t *
-levelfs_iter_seek(levelfs_db_t *db, const char *key, size_t klen) {
-	levelfs_iter_t *it;
+db_iter_t *
+db_iter_seek(db_t *db, const char *key, size_t klen) {
+	db_iter_t *it;
 	leveldb_readoptions_t *opts;
 
-	it = malloc(sizeof(levelfs_iter_t));
-	memset(it, 0, sizeof(levelfs_iter_t));
+	it = malloc(sizeof(db_iter_t));
+	memset(it, 0, sizeof(db_iter_t));
 
 	it->base_key_len = klen;
 	it->base_key = malloc(klen);
@@ -89,7 +89,7 @@ levelfs_iter_seek(levelfs_db_t *db, const char *key, size_t klen) {
 }
 
 const char *
-levelfs_iter_next(levelfs_iter_t *it, size_t *klen) {
+db_iter_next(db_iter_t *it, size_t *klen) {
 	const char *next_key = NULL;
 	*klen = 0;
 
@@ -117,12 +117,12 @@ levelfs_iter_next(levelfs_iter_t *it, size_t *klen) {
 }
 
 const char *
-levelfs_iter_value(levelfs_iter_t *it, size_t *vlen) {
+db_iter_value(db_iter_t *it, size_t *vlen) {
 	return leveldb_iter_value(it->it, vlen);
 }
 
 void
-levelfs_iter_close(levelfs_iter_t *it) {
+db_iter_close(db_iter_t *it) {
 	if (it->it) leveldb_iter_destroy(it->it);
 	if (it->opts) leveldb_readoptions_destroy(it->opts);
 	if (it->base_key) free(it->base_key);

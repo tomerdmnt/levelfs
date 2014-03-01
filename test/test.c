@@ -28,22 +28,6 @@ test_key_to_path() {
 	assert(strncmp(key_to_path((char []){'f','o','o',0xff,'b'}, 5), "/foo/b", 6) == 0);
 }
 
-void
-db_put(char *key, char *val, size_t klen) {
-	char *err = NULL;
-	levelfs_db_t *db = levelfs_db_open("testdb", &err);
-	if (err) {
-		fprintf(stderr, "leveldb open: %s\n", err);
-		exit(1);
-	}
-	levelfs_db_put(db, key, klen, val, strlen(val), &err);
-	if (err) {
-		fprintf(stderr, "leveldb put: %s\n", err);
-		exit(1);
-	}
-	levelfs_db_close(db);
-}
-
 int
 main(int argc, char **argv) {
 	size_t klen1, klen2;
@@ -52,9 +36,6 @@ main(int argc, char **argv) {
 
 	char *foobar_key = path_to_key("/foo/bar", &klen1);
 	char *foorab_key = path_to_key("/foo/rab", &klen2);
-	db_put("test_key1", "test val 1", 9);
-	db_put(foobar_key, "foo bar", klen1);
-	db_put(foorab_key , "foo rab", klen2);
 	return 0;
 }
 

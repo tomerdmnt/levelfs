@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 #include "newdirs.h"
+#include "path.h"
 
 enum {
 	NEWDIRS_SIZE = 1024,
@@ -30,45 +31,6 @@ hash(const char *path) {
 }
 
 /*
- * dirname version that allocates a new buffer
- */
-char *
-dirname(const char *path) {
-	char *dirname, *p;
-	size_t len;
-	
-	p = strrchr(path, '/');
-	if (!p) {
-		len = 1;
-		path = ".";
-	} else if (p == path) {
-		len = 1;
-		path = "/";
-	} else {
-		len = p - path;
-	}
-	dirname = malloc(len+1);
-	strncpy(dirname, path, len);
-	dirname[len] = '\0';
-	return dirname;
-}
-
-/*
- * basename version that allocates a new buffer
- */
-char *
-basename(const char *path) {
-	const char *p;
-
-	p = strrchr(path, '/');
-	if (!p)
-		p = path;
-	else
-		p++;
-	return strdup(p);
-}
-
-/*
  * lookup parent directory in hashtable
  */
 parent_t *
@@ -80,7 +42,6 @@ plookup(const char *path, uint64_t h, char create) {
 			return p;
 	}
 	if (create) {
-		printf("creating %s with %llu\n", path, h);
 		p = malloc(sizeof(parent_t));
 		p->path = strdup(path);
 		p->prev = NULL;
@@ -124,12 +85,9 @@ newdirs_add(const char *path) {
 
 	ppath = dirname(path);
 	ename = basename(path);
-	printf("newdirs_add: ppath: %s, ename: %s\n", ppath, ename);
 	h = hash(ppath);
 	parent = plookup(ppath, h, 1);
-	printf("newdirs_add: created parent: %s\n", parent->path);
 	elookup(parent, ename, 1);
-	printf("newdirs_add: created entry: %s\n", parent->children->name);
 
 	free(ppath);
 	free(ename);
@@ -179,13 +137,10 @@ newdirs_exists(const char *path) {
 	e = NULL;
 	ppath = dirname(path);
 	ename = basename(path);
-	printf("newdirs_exists: ppath = %s, ename = %s\n", ppath, ename);
 	h = hash(ppath);
 	p = plookup(ppath, h, 0);
-	printf("newdirs_exists: parent path = %p\n", p);
 	if (p)
 		e = elookup(p, ename, 0);
-	printf("newdirs_exists: e = %p\n", e);
 	free(ppath);
 	free(ename);
 	return (e != NULL);
@@ -196,7 +151,6 @@ newdirs_list(const char *path) {
 	uint64_t h;
 
 	h = hash(path);
-	printf("newdirs_list: %s\n", path);
 	return plookup(path, h, 0);
 }
 
