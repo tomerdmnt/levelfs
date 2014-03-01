@@ -19,18 +19,22 @@ sepcmp(const char *str, size_t len) {
  * /foo/bar -> .foo.bar
  */
 char *
-path_to_key(const char *path, size_t *klen) {
+path_to_key(const char *path, size_t *klen, char appendsep) {
 	char *key, *k;
 	size_t plen;
 	int i;
 
 	plen = strlen(path);
+	appendsep = appendsep && path[plen-1] != '/';
+
 	for (i = 0, *klen = 0; i < plen; i++) {
 		if (path[i] == '/')
 			(*klen) += seplen;
 		else
 			(*klen)++;
 	}
+	if (appendsep)
+		(*klen) += seplen;
 	key = malloc(*klen);
 
 	for (i = 0, k = key; i < plen; ++i) {
@@ -42,6 +46,8 @@ path_to_key(const char *path, size_t *klen) {
 			k++;
 		}
 	}
+	if (appendsep)
+		strncpy(k, &(sep[0]), seplen);
 
 	return key;
 }

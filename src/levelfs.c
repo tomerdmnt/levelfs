@@ -142,7 +142,7 @@ levelfs_getattr(const char *path, struct stat *stbuf)
 	}
 
 	res = -ENOENT;
-	base_key = path_to_key(path, &base_key_len);
+	base_key = path_to_key(path, &base_key_len, 0);
 	it = db_iter_seek(CTX_DB, base_key, base_key_len);
 
 	while ((key = db_iter_next(it, &klen)) != NULL) {
@@ -196,7 +196,7 @@ levelfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	item_path = malloc(1);
 	prev_item = malloc(1);
 	prev_item[0] = '\0';
-	base_key = path_to_key(path, &base_key_len);
+	base_key = path_to_key(path, &base_key_len, 1);
 
 	it = db_iter_seek(CTX_DB, base_key, base_key_len);
 	while ((key = db_iter_next(it, &klen)) != NULL) {
@@ -235,7 +235,7 @@ levelfs_read(const char *path, char *buf, size_t size, off_t offset,
 	size_t keylen, vallen;
 	char *err = NULL;
 
-	key = path_to_key(path, &keylen);
+	key = path_to_key(path, &keylen, 0);
 	val = db_get(CTX_DB, key, keylen, &vallen, &err);
 	free(key);
 
@@ -269,7 +269,7 @@ levelfs_write(const char *path, const char *buf, size_t bufsize,
 	res = 0;
 	new_val = NULL;
 
-	key = path_to_key(path, &klen);
+	key = path_to_key(path, &klen, 0);
 	val = db_get(CTX_DB, key, klen, &vlen, &err);
 	if (err) {
 		res = -ENOENT;
@@ -311,7 +311,7 @@ levelfs_mknod(const char *path, mode_t mode, dev_t dev) {
 	size_t klen;
 	char *err = NULL;
 
-	key = path_to_key(path, &klen);
+	key = path_to_key(path, &klen, 0);
 	db_put(CTX_DB, key, klen, NULL, 0, &err);
 	free(key);
 	if (err) {
@@ -336,7 +336,7 @@ levelfs_unlink(const char *path) {
 	size_t klen;
 	char *err = NULL;
 
-	key = path_to_key(path, &klen);
+	key = path_to_key(path, &klen, 0);
 	db_del(CTX_DB, key, klen, &err);
 	if (err) {
 		fprintf(stderr, "leveldb del error: %s", err);
@@ -357,7 +357,7 @@ levelfs_truncate(const char *path, off_t offset) {
 	char *err = NULL;
 
 	res = 0;
-	key = path_to_key(path, &klen);
+	key = path_to_key(path, &klen, 0);
 	val = db_get(CTX_DB, key, klen, &vlen, &err);
 	if (err) {
 		res = -ENOENT;
@@ -391,7 +391,7 @@ levelfs_mkdir(const char *path, mode_t mode) {
 	db_iter_t *it;
 
 	res = 0;
-	base_key = path_to_key(path, &base_key_len);
+	base_key = path_to_key(path, &base_key_len, 0);
 	if (newdirs_exists(path)) {
 		res = -EEXIST;
 		goto error;
@@ -424,7 +424,7 @@ levelfs_rmdir(const char *path) {
 	db_iter_t *it;
 
 	res = 0;
-	base_key = path_to_key(path, &base_key_len);
+	base_key = path_to_key(path, &base_key_len, 0);
 
 	it = db_iter_seek(CTX_DB, base_key, base_key_len);
 	if ((key = db_iter_next(it, &klen)) != NULL) {

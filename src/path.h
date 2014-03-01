@@ -11,7 +11,7 @@ sepcmp(const char *str, size_t len);
  * returns a db key representaiton of a path
  */
 char *
-path_to_key(const char *path, size_t *klen);
+path_to_key(const char *path, size_t *klen, char appendsep);
 
 /*
  * returns a null terminated path representation of a db key
