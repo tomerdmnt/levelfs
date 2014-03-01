@@ -6,8 +6,8 @@ Uses [sublevels](https://github.com/dominictarr/level-sublevel) as file paths.
 Experimental, backup your db before mounting.
 
 ```
-$ levelfs db /mnt/db
-$ ls /mnt/db
+$ levelfs /path/to/db /mnt
+$ ls /mnt
 ```
 
 ## Install
