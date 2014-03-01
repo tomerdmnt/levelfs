@@ -2,10 +2,10 @@
 #include <stddef.h>
 
 /*
- * get the sublevel seperator character
+ * compare string to sublevel seperator
  */
-char
-sublevel_seperator();
+int
+sepcmp(const char *str, size_t len);
 
 /*
  * returns a db key representaiton of a path
@@ -24,12 +24,6 @@ key_to_path(const char *key, size_t klen);
  */
 const char *
 path_diff(const char *base_path, const char *path);
-
-/*
- * append the seperator to a given key
- */
-char *
-key_append_sep(char *key, size_t *klen);
 
 /*
  * dirname version that allocates a new buffer

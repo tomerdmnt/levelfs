@@ -1,0 +1,15 @@
+{
+  "name": "test-levelfs",
+  "version": "0.0.0",
+  "description": "levelfs node test",
+  "main": "test.js",
+  "scripts": {
+    "test": "node ./test.js"
+  },
+  "dependencies": {
+    "leveldown": "*",
+    "levelup": "*",
+    "level-sublevel": "*",
+    "mkdirp": "*"
+  }
+}

@@ -5,59 +5,72 @@
 
 #include "path.h"
 
-static unsigned const char sep = 0xff;
+static int seplen = 2;
+static const char sep[] = {0xc3, 0xbf};
 
-char
-sublevel_seperator() {
-	return sep;
+int
+sepcmp(const char *str, size_t len) {
+	if (len < seplen)
+		return -1;
+	return strncmp(str, &(sep[0]), seplen);
 }
 
 /*
- * /foo/bar -> foo.bar
+ * /foo/bar -> .foo.bar
  */
 char *
 path_to_key(const char *path, size_t *klen) {
-	char *key;
+	char *key, *k;
 	size_t plen;
+	int i;
 
 	plen = strlen(path);
-	*klen = plen;
-	if (path[plen-1] == '/')
-		if (*klen > 0) (*klen)--;
-	if (path[0] == '/') {
-		path++;
-		if (*klen > 0) (*klen)--;
+	for (i = 0, *klen = 0; i < plen; i++) {
+		if (path[i] == '/')
+			(*klen) += seplen;
+		else
+			(*klen)++;
 	}
 	key = malloc(*klen);
 
-	for (int i = 0; i < *klen; ++i) {
-		if (path[i] == '/')
-			key[i] = sep;
-		else
-			key[i] = path[i];
+	for (i = 0, k = key; i < plen; ++i) {
+		if (path[i] == '/') {
+			strncpy(k, &(sep[0]), seplen);
+			k += seplen;
+		} else {
+			*k = path[i];
+			k++;
+		}
 	}
 
 	return key;
 }
 
 /*
- * foo.bar -> /foo/bar
+ * .foo.bar -> /foo/bar
  */
 char *
 key_to_path(const char *key, size_t klen) {
-	char *path;
+	char *path, *p;
+	const char *k;
 
-	path = malloc(klen+2);
-	path[0] = '/';
+	path = malloc(klen);
 
-	for (int i = 0; i < klen; ++i) {
-		if (key[i] == sep)
-			path[i+1] = '/';
-		else
-			path[i+1] = key[i];
+	for (k = key, p = path; k < key+klen; ++p) {
+		printf("%x ", *k);
+		if (strncmp(k, &(sep[0]), seplen) == 0) {
+			*p = '/';
+			k += seplen;
+		} else {
+			*p = *k;
+			k++;
+		}
 	}
+	printf("\n");
+	fflush(stdout);
 
-	path[klen+1] = '\0';
+	*p = '\0';
+	printf("path: %s\n", path);
 	return path;
 }
 
@@ -75,14 +88,6 @@ path_diff(const char *base_path, const char *path) {
 	path += base_path_len;
 	if (*path == '/') path++;
 	return path;
-}
-
-char *
-key_append_sep(char *key, size_t *klen) {
-	(*klen)++;
-	key = realloc(key, *klen);
-	key[*klen-1] = sep;
-	return key;
 }
 
 char *

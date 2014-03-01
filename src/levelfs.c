@@ -144,7 +144,7 @@ levelfs_getattr(const char *path, struct stat *stbuf)
 			stbuf->st_size = vlen;
 			res = 0;
 			break;
-		} else if (key[base_key_len] == sublevel_seperator()) {
+		} else if (sepcmp(key+base_key_len, klen - base_key_len) == 0) {
 			/* sublevel = directory */
 			stbuf->st_mode = S_IFDIR | 0755;
 			stbuf->st_nlink = 2;
@@ -187,8 +187,6 @@ levelfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	prev_item = malloc(1);
 	prev_item[0] = '\0';
 	base_key = path_to_key(path, &base_key_len);
-	if (base_key_len > 0)
-		key_append_sep(base_key, &base_key_len);
 
 	it = db_iter_seek(CTX_DB, base_key, base_key_len);
 	while ((key = db_iter_next(it, &klen)) != NULL) {
@@ -391,7 +389,7 @@ levelfs_mkdir(const char *path, mode_t mode) {
 	it = db_iter_seek(CTX_DB, base_key, base_key_len);
 	if ((key = db_iter_next(it, &klen)) != NULL) {
 		if (base_key_len == klen ||
-		    key[base_key_len] == sublevel_seperator()) {
+		    sepcmp(key+base_key_len, klen - base_key_len) == 0) {
 			printf("mkdir: %s found in leveldb\n", path);
 			res = -EEXIST;
 			goto error;
@@ -423,7 +421,7 @@ levelfs_rmdir(const char *path) {
 		if (base_key_len == klen) {
 			res = -ENOTDIR;
 			goto error;
-		} else if (key[base_key_len] == sublevel_seperator()) {
+		} else if (sepcmp(key+base_key_len, klen - base_key_len) == 0) {
 			res = -ENOTEMPTY;
 			goto error;
 		}

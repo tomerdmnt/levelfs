@@ -20,10 +20,18 @@ $(P): $(OBJ) $(LIBLEVELDB)
 $(LIBLEVELDB):
 	@make --directory=deps/leveldb/
 
-test:
+test: test.c test.js
+
+test.c:
 	$(CC) -DNO_MAIN $(CFLAGS) -Wno-unused-function -Wno-unused-variable $(LDLIBS) $(SRC) test/test.c -o test/test
 	time test/test
 	rm test/test
+
+test.js: $(P) test/node_modules
+	node ./test/test.js
+
+test/node_modules: test/package.json
+	@cd test/ && npm install
 
 tags: $(SRC)
 	ctags -R *
@@ -34,4 +42,4 @@ install:
 clean:
 	rm $(P) $(OBJ)
 
-.PHONY: clean test
+.PHONY: clean test test.js test.c
