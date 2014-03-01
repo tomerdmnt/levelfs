@@ -36,29 +36,39 @@ static int levelfs_release(const char *, struct fuse_file_info *);
 static int levelfs_chmod(const char *, mode_t);
 static int levelfs_chown(const char *, uid_t, gid_t);
 static int levelfs_utime(const char *, struct utimbuf *);
+static int levelfs_setxattr(const char *, const char *, const char *,
+                            size_t, int, uint32_t);
+static int levelfs_getxattr(const char *, const char *, char *,
+                            size_t, uint32_t);
+static int levelfs_listxattr(const char *, char *, size_t);
+static int levelfs_removexattr(const char *, const char *);
 
 static struct fuse_operations levelfs_oper = {
-	.init     = levelfs_init,
-	.destroy  = levelfs_destroy,
-	.getattr  = levelfs_getattr,
-	.readdir  = levelfs_readdir,
-	.read     = levelfs_read,
-	.write    = levelfs_write,
-	.mknod    = levelfs_mknod,
-	.unlink   = levelfs_unlink,
-	.truncate = levelfs_truncate,
-	.mkdir    = levelfs_mkdir,
-	.rmdir    = levelfs_rmdir,
-	.open     = levelfs_open,
-	.flush    = levelfs_flush,
-	.release  = levelfs_release,
-	.chmod    = levelfs_chmod,
-	.chown    = levelfs_chown,
-	.utime    = levelfs_utime,
+	.init        = levelfs_init,
+	.destroy     = levelfs_destroy,
+	.getattr     = levelfs_getattr,
+	.readdir     = levelfs_readdir,
+	.read        = levelfs_read,
+	.write       = levelfs_write,
+	.mknod       = levelfs_mknod,
+	.unlink      = levelfs_unlink,
+	.truncate    = levelfs_truncate,
+	.mkdir       = levelfs_mkdir,
+	.rmdir       = levelfs_rmdir,
+	.open        = levelfs_open,
+	.flush       = levelfs_flush,
+	.release     = levelfs_release,
+	.chmod       = levelfs_chmod,
+	.chown       = levelfs_chown,
+	.utime       = levelfs_utime,
+	.setxattr    = levelfs_setxattr,
+	.getxattr    = levelfs_getxattr,
+	.listxattr   = levelfs_listxattr,
+	.removexattr = levelfs_removexattr,
 };
 
 /*
- * conf_t used by...
+ * conf_t used by fuse opts parser
  */
 typedef struct {
 	char        *db_path;
@@ -469,6 +479,28 @@ levelfs_chown(const char *path, uid_t uid, gid_t gid) {
 
 static int
 levelfs_utime(const char *path, struct utimbuf *ubuf) {
+	return 0;
+}
+
+static int
+levelfs_setxattr(const char *path, const char *name,
+                 const char *value, size_t size, int flags, uint32_t pos) {
+	return 0;
+}
+
+static int
+levelfs_getxattr(const char *path, const char *name,
+                 char *value, size_t size, uint32_t pos) {
+	return 0;
+}
+
+static int
+levelfs_listxattr(const char *path, char *list, size_t size) {
+	return 0;
+}
+
+static int
+levelfs_removexattr(const char *path, const char *name) {
 	return 0;
 }
 
