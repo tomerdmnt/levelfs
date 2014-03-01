@@ -1,10 +1,14 @@
 
 Leveldb FUSE file system
 
-Uses sublevels (0xff denotes a directory) as file paths.
+Uses [sublevels](https://github.com/dominictarr/level-sublevel) as file paths.
 
-All basic operations are implemented (mknod, mkdir, rmdir, read, write, etc...), 
-however this project still requires testing.
+Experimental, backup your db before mounting.
+
+```
+$ levelfs db /mnt/db
+$ ls /mnt/db
+```
 
 ## Install
 
@@ -22,6 +26,7 @@ $ git submodule update
 build
 ```
 $ make
+$ make install
 ```
 
 ## Usage
@@ -40,10 +45,13 @@ FUSE options:
     -s                     disable multi-threaded operation
 ```
 
+## Issues
+- Empty directories won't persist between mounts
+- For the same reason, a directory disappears when all files under it are delted which causes various issues when running rm -rf
+
 ## TODO
 
-- support sublevel seperators other than 0xff
+- accept sublevel seperator as parameter
 - support arbitrary binary in keys
-- refactor some of the operations
-- docs
+- tests
 
