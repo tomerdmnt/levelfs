@@ -1,4 +1,4 @@
-P=levelfs
+P = levelfs
 UNAME_S = $(shell uname -s)
 ifeq ($(UNAME_S), Darwin)
 	CC=clang
@@ -16,14 +16,18 @@ OBJ = $(SRC:.c=.o)
 
 LIBLEVELDB=deps/leveldb/libleveldb.a
 
-$(P): $(OBJ) $(LIBLEVELDB)
+$(P): $(LIBLEVELDB) $(OBJ)
 	$(CC) $^ $(CFLAGS) $(LDLIBS) $(LIBLEVELDB) -o $@
 
 %.o: %.c
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(LIBLEVELDB):
+$(LIBLEVELDB): deps/leveldb/.git
 	@make --directory=deps/leveldb/
+
+deps/leveldb/.git:
+	git submodule init
+	git submodule update
 
 test: test.c test.js
 
