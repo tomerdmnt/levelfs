@@ -1,13 +1,18 @@
 P=levelfs
-CC=clang
+UNAME_S = $(shell uname -s)
+ifeq ($(UNAME_S), Darwin)
+	CC=clang
+else
+	CC=gcc
+endif
 
-CFLAGS=-Wall -O0 -g
-CFLAGS+=-D_FILE_OFFSET_BITS=64
-LDLIBS=`pkg-config fuse --cflags --libs`
-LDLIBS+=-lstdc++
+CFLAGS = -Wall -O0 -g
+CFLAGS += -D_FILE_OFFSET_BITS=64
+LDLIBS = `pkg-config fuse --cflags --libs`
+LDLIBS += -lstdc++
 
-SRC=$(wildcard src/*.c)
-OBJ=$(SRC:.c=.o)
+SRC = $(wildcard src/*.c)
+OBJ = $(SRC:.c=.o)
 
 LIBLEVELDB=deps/leveldb/libleveldb.a
 
