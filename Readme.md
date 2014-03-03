@@ -17,12 +17,6 @@ on osx, install osxfuse
 $ brew install osxfus
 ```
 
-init submodules
-```
-$ git submodule init
-$ git submodule update
-```
-
 build
 ```
 $ make
