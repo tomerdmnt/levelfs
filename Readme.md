@@ -10,6 +10,12 @@ $ levelfs /path/to/db /mnt
 $ ls /mnt
 ```
 
+mount your local npmd
+
+```
+$ levelfs ~/.npmd /mnt/npmd
+```
+
 ## Install
 
 on osx, install osxfuse
@@ -41,11 +47,12 @@ FUSE options:
 
 ## Issues
 - Empty directories won't persist between mounts
-- For the same reason, a directory disappears when all files under it are delted which causes various issues when running rm -rf
+- For the same reason, a directory disappears when all files under it are deleted which causes various issues when running rm -rf
 
 ## TODO
 
 - accept sublevel seperator as parameter
+  - meanwhile the seperator can be changed [here](path.c#L8-L9)
 - support arbitrary binary in keys
 - tests
 
