@@ -52,7 +52,7 @@ FUSE options:
 ## TODO
 
 - accept sublevel seperator as parameter
-  - meanwhile the seperator can be changed [here](path.c#L8-L9)
+  - meanwhile the seperator can be changed [here](src/path.c#L8-L9)
 - support arbitrary binary in keys
 - tests
 
