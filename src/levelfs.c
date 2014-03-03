@@ -2,7 +2,7 @@
  * FUSE file system for leveldb
  */
 #define FUSE_USE_VERSION 26
-#define LEVELFS_VERSION "0.0.2"
+#define LEVELFS_VERSION "0.1.0"
 
 #include <fuse.h>
 #include <stdio.h>
