@@ -8,6 +8,7 @@ endif
 
 CFLAGS = -Wall -O0 -g
 CFLAGS += -D_FILE_OFFSET_BITS=64
+CFLAGS += -I/usr/local/include/osxfuse
 LDLIBS = `pkg-config fuse --cflags --libs`
 LDLIBS += -lstdc++
 
@@ -29,7 +30,7 @@ deps/leveldb/.git:
 	git submodule init
 	git submodule update
 
-test: test.c test.js
+test: test.js
 
 test.c:
 	$(CC) -DNO_MAIN $(CFLAGS) -Wno-unused-function -Wno-unused-variable $(LDLIBS) $(SRC) test/test.c -o test/test
