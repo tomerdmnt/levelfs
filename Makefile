@@ -46,7 +46,7 @@ test/node_modules: test/package.json
 tags: $(SRC)
 	ctags -R *
 
-install:
+install: $(P)
 	cp ./levelfs /usr/local/bin
 
 clean:

@@ -1,5 +1,5 @@
 
-Leveldb FUSE file system
+Leveldb FUSE filesystem
 
 Uses [sublevels](https://github.com/dominictarr/level-sublevel) as file paths.
 

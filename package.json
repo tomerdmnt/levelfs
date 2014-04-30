@@ -1,0 +1,9 @@
+{
+  "name": "levelfs",
+  "version": "0.1.0",
+  "repo": "tomerdmnt/levelfs",
+  "description": "leveldb FUSE filesystem",
+  "keywords": ["leveldb","level","fuse","fs","filesystem"],
+  "license": "MIT",
+  "install": "make install"
+}
