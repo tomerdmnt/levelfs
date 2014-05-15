@@ -27,8 +27,8 @@ $(LIBLEVELDB): deps/leveldb/.git
 	@make --directory=deps/leveldb/
 
 deps/leveldb/.git:
-	git submodule init
-	git submodule update
+	git submodule init .
+	git submodule update .
 
 test: test.js
 
