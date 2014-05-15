@@ -25,7 +25,7 @@ on osx, install osxfuse
 $ brew install osxfus
 ```
 
-using [clib](clibs/clib)
+using [clib](https://github.com/clibs/clib)
 ```
 $ clib install tomerdmnt/levelfs
 ```
