@@ -23,12 +23,8 @@ $(P): $(LIBLEVELDB) $(OBJ)
 %.o: %.c
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(LIBLEVELDB): deps/leveldb/.git
+$(LIBLEVELDB): 
 	@make --directory=deps/leveldb/
-
-deps/leveldb/.git:
-	git submodule init 
-	git submodule update 
 
 test: test.js
 
